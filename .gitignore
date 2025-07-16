@@ -1,0 +1,6 @@
+# Ignore Python cache & virtual env
+__pycache__/
+.venv/
+output/
+*.pyc
+.DS_Store
