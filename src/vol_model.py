@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 from arch import arch_model
 
+def simple_vol(df_returns_input) :
+    df_returns = df_returns_input.copy()
+    return df_returns.rolling(window=25).std()
+
 def calc_vol_garch(df_returns):
     df_vol = pd.DataFrame(index=df_returns.index)
 

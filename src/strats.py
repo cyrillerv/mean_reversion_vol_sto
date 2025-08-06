@@ -88,14 +88,13 @@ def third_strat(df_input) :
 
 
 
-def strat_garch_vol(df_input) :
+def strat_vol(df_input, fct_vol) :
     df = df_input['close'].copy()
     # Calcul des rendements log
     df_returns = np.log(df / df.shift(1)).dropna()
 
     # 3. Estimation de la volatilité GARCH
-
-    df_vol = calc_vol_garch(df_returns)
+    df_vol = fct_vol(df_returns)
 
     # 4. Rendements standardisés (Sharpe-like)===
     df_std_returns = df_returns / df_vol
@@ -110,10 +109,11 @@ def strat_garch_vol(df_input) :
     # Optionnel : filtrage des extrêmes
     signal[(zscore.abs() < 1.0)] = 0  # neutre quand le z-score est faible
 
+    date_col = signal.index.name or "index"
     melted_df = (
         signal
         .reset_index()
-        .rename(columns={'index': 'Date'})
+        .rename(columns={date_col: 'Date'})
         .melt(id_vars='Date', var_name='Symbol', value_name='Volume')
     )
     orders_df = melted_df.replace(0, np.nan).dropna()
