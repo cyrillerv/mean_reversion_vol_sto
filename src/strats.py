@@ -2,6 +2,8 @@
 # problem: we open pos at the close while we need the close to calculate our signals => better to open position at the open the next day => could reduce performance
 
 import pandas as pd
+import numpy as np
+from vol_model import *
 
 def first_strat(df_input) :
     df = df_input.copy()
@@ -82,4 +84,40 @@ def third_strat(df_input) :
                 holding_days = 1  # Commence à 1 car on vient d’ouvrir
 
     orders_df = pd.DataFrame(list_positions)
+    return orders_df
+
+
+
+def strat_garch_vol(df_input) :
+    df = df_input['close'].copy()
+    # Calcul des rendements log
+    df_returns = np.log(df / df.shift(1)).dropna()
+
+    # 3. Estimation de la volatilité GARCH
+
+    df_vol = calc_vol_garch(df_returns)
+
+    # 4. Rendements standardisés (Sharpe-like)===
+    df_std_returns = df_returns / df_vol
+
+    # 5. Calcul du z-score glissant
+    window = 25
+    zscore = (df_std_returns - df_std_returns.rolling(window).mean()) / df_std_returns.rolling(window).std()
+
+    # 6. Génération de signaux (exemple simple)
+    signal = -zscore.copy()  # On vend quand zscore est élevé, on achète quand il est bas
+
+    # Optionnel : filtrage des extrêmes
+    signal[(zscore.abs() < 1.0)] = 0  # neutre quand le z-score est faible
+
+    melted_df = (
+        signal
+        .reset_index()
+        .rename(columns={'index': 'Date'})
+        .melt(id_vars='Date', var_name='Symbol', value_name='Volume')
+    )
+    orders_df = melted_df.replace(0, np.nan).dropna()
+    orders_df['Volume'] = orders_df['Volume'].astype(int)
+    orders_df["Type"] = np.where(orders_df['Volume'] > 0, "Buy", "Sell")
+    orders_df['Volume'] = orders_df['Volume'].abs()
     return orders_df

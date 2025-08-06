@@ -8,7 +8,8 @@ from data_loader import *
 list_fct_strats = {
     "first": first_strat, 
     "second": second_strat, 
-    "third": third_strat
+    "third": third_strat,
+    "GARCH": strat_garch_vol
     }
 
 df = load_data()
